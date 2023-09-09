@@ -42,7 +42,7 @@ class File(models.Model):
     file = models.FileField(_('file'), upload_to='files/%Y/%m/%d/')
     is_enable = models.BooleanField(_('is_enable'), default=True)
     categories = models.ManyToManyField(
-        _('Category'), verbose_name=_('categories'), blank=True)
+        'Category', verbose_name=_('categories'), blank=True)
     created_time = models.DateTimeField(_('created time'), auto_now_add=True)
     updated_time = models.DateTimeField(_('updated time'), auto_now=True)
 
