@@ -1,6 +1,7 @@
 from email.policy import default
 from enum import unique
 from operator import truediv
+from random import random
 from tabnanny import verbose
 from time import timezone
 from tracemalloc import is_tracing
@@ -14,27 +15,6 @@ from django.core import validators
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin, BaseUserManager,send_mail
 
-
-
-class UserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def _create_user(self, username, phone_number, email, password, is_staff, is_superuser, **extra_fields):
-        now = timezone.now()
-        if not username:
-            raise ValueError('The given username must be set')
-        email = self.normalize_email(email)
-        user = self.model(phone_number=phone_number,
-                          username=username, email= email,
-                          is_staff=is_staff, is_active=True,
-                          is_superuser=is_superuser,
-                          date_joined=now, **extra_fields)
-
-        if not extra_fields.get('no_password'):
-            user.set_password(password)
-
-        user.save(using=self._db)
-        return user
 
 
 
@@ -82,6 +62,38 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.email is not None and self.email.strip() == '':
             self.email = None
         super().save(*args, **kwargs)
+
+
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(self, username, phone_number, email, password, is_staff, is_superuser, **extra_fields):
+        now = timezone.now()
+        if not username:
+            raise ValueError('The given username must be set')
+        email = self.normalize_email(email)
+        user = self.model(phone_number=phone_number,
+                          username=username, email= email,
+                          is_staff=is_staff, is_active=True,
+                          is_superuser=is_superuser,
+                          date_joined=now, **extra_fields)
+
+        if not extra_fields.get('no_password'):
+            user.set_password(password)
+
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username=None, phone_number=None, email=None, password=None, **extra_fields):
+        if username is None:
+            if email:
+                username = email.split('@',1)[0]
+            if phone_number:
+                username = random.choice('abcdefghijklmnopqrstuwxyz') + str(phone_number)[-7:]
+            while User.objects.filter(username=username).exists():
+                username += str(random.randint(10, 99))
+        
+        return self._create_user(username, phone_number, email, password, False, False, **extra_fields)
 
 
 
