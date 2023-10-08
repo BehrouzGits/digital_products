@@ -1,6 +1,7 @@
 from email.policy import default
 from enum import unique
 from operator import truediv
+from pyexpat import model
 from random import random
 from tabnanny import verbose
 from time import timezone
@@ -11,11 +12,46 @@ from wsgiref.validate import validator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core import validators
-# from django.contrib.auth.base_user import AbstractBaseUser
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin, BaseUserManager,send_mail
 
 
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(self, username, phone_number, email, password, is_staff, is_superuser, **extra_fields):
+        now = timezone.now()
+        if not username:
+            raise ValueError('The given username must be set')
+        email = self.normalize_email(email)
+        user = self.model(phone_number=phone_number,
+                          username=username, email= email,
+                          is_staff=is_staff, is_active=True,
+                          is_superuser=is_superuser,
+                          date_joined=now, **extra_fields)
+
+        if not extra_fields.get('no_password'):
+            user.set_password(password)
+
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username=None, phone_number=None, email=None, password=None, **extra_fields):
+        if username is None:
+            if email:
+                username = email.split('@',1)[0]
+            if phone_number:
+                username = random.choice('abcdefghijklmnopqrstuwxyz') + str(phone_number)[-7:]
+            while User.objects.filter(username=username).exists():
+                username += str(random.randint(10, 99))
+        
+        return self._create_user(username, phone_number, email, password, False, False, **extra_fields)
+
+    def create_superuser(self, username, phone_number, email, password, **extra_fields):
+        return self._create_user(username, phone_number, email, password, True, True, **extra_fields)
+
+    def get_by_phone_number(self, phone_number):
+        return self.get(**{'phone_number':phone_number})
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -64,38 +100,65 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
 
-class UserManager(BaseUserManager):
-    use_in_migrations = True
 
-    def _create_user(self, username, phone_number, email, password, is_staff, is_superuser, **extra_fields):
-        now = timezone.now()
-        if not username:
-            raise ValueError('The given username must be set')
-        email = self.normalize_email(email)
-        user = self.model(phone_number=phone_number,
-                          username=username, email= email,
-                          is_staff=is_staff, is_active=True,
-                          is_superuser=is_superuser,
-                          date_joined=now, **extra_fields)
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    nick_name = models.CharField(_('nick_name'), max_length=150, blank=True)
+    avatar = models.ImageField(_('avatar'), blank=True)
+    birthday = models.DateField(_('birthday'), null=True, blank=True)
+    gender = models.NullBooleanField(_('gender'), help_text=_('female is False, male is True, null is unset'))
+    province = models.ForeignKey(verbose_name=_('province'), to='province', null=True, on_delete=models.SET_DEFAULT)
+    
+    class Meta:
+        db_table = 'user_profiles'
+        verbose_name = _('profile')
+        verbose_name_plurar = _('profiles')
 
-        if not extra_fields.get('no_password'):
-            user.set_password(password)
+    @property
+    def get_first_name(self):
+        return self.user.first_name
 
-        user.save(using=self._db)
-        return user
+    @property
+    def get_last_name(self):
+        return self.user.last_name
 
-    def create_user(self, username=None, phone_number=None, email=None, password=None, **extra_fields):
-        if username is None:
-            if email:
-                username = email.split('@',1)[0]
-            if phone_number:
-                username = random.choice('abcdefghijklmnopqrstuwxyz') + str(phone_number)[-7:]
-            while User.objects.filter(username=username).exists():
-                username += str(random.randint(10, 99))
-        
-        return self._create_user(username, phone_number, email, password, False, False, **extra_fields)
+    def get_nickname(self):
+        return self.nick_name if self.nick_name else self.user.username
+
+    
+class Device(models.Model):
+    WEB = 1
+    IOS = 2
+    ANDROID = 3
+    DEVICE_TYPE_CHOICES = ( 
+        (WEB, 'web'),
+        (IOS, 'ios'),
+        (ANDROID, 'android'),
+    )
+
+    user = models.ForeignKey(User , related_name= 'devices', on_delete=models.CASCADE)
+    device_uuid = models.UUIDField(_('Device UUID'), null=True)
+    last_login = models.DateTimeField(_('last login date'), null=True)
+    device_type = models.PositiveSmallIntegerField(choices=DEVICE_TYPE_CHOICES, default=WEB)
+    device_os = models.CharField(_('device os'), max_length=20, blank=True)
+    device_model = models.CharField(_('device model'), max_length=50, blank=True)
+    app_version = models.CharField(_('app version'), max_length=20, blank=True)
+    create_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'user_devices'
+        verbose_name = _('device')
+        verbose_name_plurar = _('devices')
+        unique_together = ('user','device_uuid')
 
 
+    
+class Province(models.Model):
+    name = models.CharField(max_length=50)
+    is_valid = models.BooleanField(default=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-# class UserProfile(models.Model):
-#     user = models.OneToOneField()
+    def __str__(self):
+        return self.name
+
