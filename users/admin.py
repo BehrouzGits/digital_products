@@ -1,6 +1,9 @@
+from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 
@@ -15,3 +18,27 @@ class MyUserAdmin(UserAdmin):
         (_('Important dates'), {'fields' : ('last_login', 'date_joined')}),
     )
 
+    add_fieldsets = (
+        (None, {
+            'classes' : ('wide',),
+            'fields' : ('username', 'phone_number', 'password1','password2'),
+        }),
+    )
+    list_display = ('username', 'phone_number', 'email', 'is_staf')
+    search_fields = ('username__exact', )
+    ordering = ('-id',)
+
+    def get_search_results(self, request, queryset, search_term) :
+        queryset, may_have_duplicates = super().get_search_results(
+            request, queryset, search_term,
+        )
+        try:
+            search_term_as_int = int(search_term)
+        except ValueError:
+            pass
+        else:
+            queryset |= self.model.objects.filter(phone_number = search_term_as_int)
+        return queryset, may_have_duplicates
+            
+
+admin.site.unregister(Group)
