@@ -56,7 +56,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(_('username'), max_length=32 , unique=True,help_text= _('Required 30 characters or fewer starting with a letter, Letters, digits') ,
-                                validators = [validators.RegexValidator(r'^[a-zA-Z][a-zA-Z0-9_\.]+$]',_('Enter a valid sure name starting with a-z.'),'invalid'),] ,
+                                validators = [validators.RegexValidator(r'^[a-zA-Z][a-zA-Z0-9_\.]+$',_('Enter a valid sure name starting with a-z.'),'invalid'),] ,
                                 error_messages={'unique': _("A user with that username already exist.")},)
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=30, blank=True)
@@ -106,13 +106,13 @@ class UserProfile(models.Model):
     nick_name = models.CharField(_('nick_name'), max_length=150, blank=True)
     avatar = models.ImageField(_('avatar'), blank=True)
     birthday = models.DateField(_('birthday'), null=True, blank=True)
-    gender = models.NullBooleanField(_('gender'), help_text=_('female is False, male is True, null is unset'))
-    province = models.ForeignKey(verbose_name=_('province'), to='province', null=True, on_delete=models.SET_DEFAULT)
+    gender = models.BooleanField(_('gender'), null=True, help_text=_('female is False, male is True, null is unset'))
+    province = models.ForeignKey(verbose_name=_('province'), to='province', null=True, on_delete=models.CASCADE)
     
     class Meta:
         db_table = 'user_profiles'
         verbose_name = _('profile')
-        verbose_name_plurar = _('profiles')
+        verbose_name_plural = _('profiles')
 
     @property
     def get_first_name(self):
@@ -148,7 +148,7 @@ class Device(models.Model):
     class Meta:
         db_table = 'user_devices'
         verbose_name = _('device')
-        verbose_name_plurar = _('devices')
+        verbose_name_plural = _('devices')
         unique_together = ('user','device_uuid')
 
 
