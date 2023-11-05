@@ -41,7 +41,7 @@ class UserManager(BaseUserManager):
             if email:
                 username = email.split('@',1)[0]
             if phone_number:
-                username = random.choice('abcdefghijklmnopqrstuwxyz') + str(phone_number)[-7:]
+                username = random.choice("abcdefghijklmnopqrstuwxyz") + str(phone_number)[-7:]
             while User.objects.filter(username=username).exists():
                 username += str(random.randint(10, 99))
         
