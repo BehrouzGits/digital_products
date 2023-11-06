@@ -2,7 +2,7 @@ from email.policy import default
 from enum import unique
 from operator import truediv
 from pyexpat import model
-from random import random
+import random
 from tabnanny import verbose
 from time import timezone
 from tracemalloc import is_tracing
@@ -41,7 +41,8 @@ class UserManager(BaseUserManager):
             if email:
                 username = email.split('@',1)[0]
             if phone_number:
-                username = random.choice("abcdefghijklmnopqrstuwxyz") + str(phone_number)[-7:]
+                
+                username = random.choice('abcdefghijklmnopqrstuwxyz') + str(phone_number)[-7:]
             while User.objects.filter(username=username).exists():
                 username += str(random.randint(10, 99))
         
