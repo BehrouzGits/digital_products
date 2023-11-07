@@ -18,7 +18,6 @@ class RegisterView(APIView):
         phone_number = request.data.get('phone_number')
         if not phone_number:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
         try:
             user = User.objects.get(phone_number=phone_number)
             return Response({'detail': 'User already registered'}, 
@@ -28,7 +27,6 @@ class RegisterView(APIView):
 
         # user, created = User.objects.get_or_create(phone_number=phone_number)
 
-               
         device = Device.objects.create(user=user)
 
         code = random.randint(10000, 99999)
