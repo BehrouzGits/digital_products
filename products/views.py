@@ -12,6 +12,8 @@ from .serializers import CategorySerializer, ProductSerializer, FileSerializer
 class ProductListView(APIView):
 
     def get(self, request):
+        print(request.user)
+        print(request.auth)
         products = Product.objects.all()
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
