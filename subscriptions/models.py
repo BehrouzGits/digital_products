@@ -13,7 +13,7 @@ class Package(models.Model):
     price = models.PositiveIntegerField(_('price'))
     duration =  models.DurationField(_('duration'), blank=True, null = True)
     created_time = models.DateTimeField (_('created time'), auto_now_add=True)
-    updateed_time = models.DateTimeField(_('update time'), auto_now=True)
+    updated_time = models.DateTimeField(_('update time'), auto_now=True)
 
     class Meta:
         db_table = 'packages'
