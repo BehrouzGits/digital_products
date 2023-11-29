@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 from utils.validators import validate_phone_number
@@ -51,7 +51,7 @@ class Payment(models.Model):
     price = models.PositiveIntegerField(_('price'), default=0)
     status = models.PositiveSmallIntegerField(_('status'), choices=STATUS_CHOICES, default=STATUS_VOID)
     device_uuid = models.CharField(_('device uuid'), max_length=40 , blank=True)
-    token = models.CharField()
+    token = models.CharField(max_length=200)
     phone_number = models.BigIntegerField(_('phone number'), validators=[validate_phone_number])
     consume_code = models.PositiveIntegerField(_('consumed reference code'), null=True, db_index=True)
     created_time = models.DateTimeField(_('creation time'), auto_now_add=True, db_index=True)
