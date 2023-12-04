@@ -1,6 +1,6 @@
 # Django
 #pip install -r requirements.txt
-#11:18:34'
+#11:21:30'
 
 Django==4.2
 djangorestframework==3.14.0
