@@ -41,4 +41,20 @@ class PaymentView(APIView):
             token=str(uuid.uuid4())
         )
 
+        #return redirect()
+        return Response({'token': payment.token, 'callback_url': 'https://my-site.cpm/payments/pay'})
+
         
+    def post(self, request):
+        token = request.data.get('token')
+        st = request.data.get('status')
+
+        try :
+            payment = Payment.objects.get(token=token)
+        except Payment.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        if st != 10:
+            payment.status = Payment.STATUS_CANCELED
+            payment.save()
+            
