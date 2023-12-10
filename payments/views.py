@@ -1,14 +1,16 @@
 import uuid
+import requests
 
 from django.shortcuts import render
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
-from .models import Payment,Gateway 
-from subscriptions.models import Package
+from .models import Payment,Gateway
+from subscriptions.models import Package, Subscription
 from .serializers import GatewaySerializer
 
 
@@ -58,3 +60,24 @@ class PaymentView(APIView):
             payment.status = Payment.STATUS_CANCELED
             payment.save()
             
+            return Response({'detail': 'Payment canceled by user.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        r= requests.post('bank-verify_url', data={})
+        if r.status_code // 100 !=2:
+            payment.status = Payment.STATUS_ERROR
+            payment.save()
+
+            return Response({'detail': 'Payment verification failed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        payment.status = Payment.STATUS_PAID
+        payment.save()
+
+        Subscription.objects.create(
+            user=payment.user,
+            package=payment.package,
+            expire_time=timezone.now() + timezone.timedelta(days=payment.package.duration.days)
+            )
+        
+        return Response({'detail': 'Payment is successfull'})
+
+        
