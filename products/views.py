@@ -21,6 +21,7 @@ class ProductListView(APIView):
 class ProductDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+   
     def get(self, request, pk):
         try:
             product = Product.objects.get(pk=pk)
